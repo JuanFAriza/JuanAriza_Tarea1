@@ -5,7 +5,7 @@
 
 #define N  64 // Numero de particulas
 #define beta  1.0 // Constante de la ec. dif.
-#define Pi  3.14159265358979323846264338327
+#define Pi  3.14159265359
 #define delta_t 0.005 // Intervalo de tiempo para cada paso
 #define T  5.0*pow((double)N,2.2) // Tiempo total de integracion
 #define instantaneas 1000 // Numero de instantaneas que se tomaran
@@ -44,14 +44,14 @@ int main(int argc, char **argv){
 
 #pragma omp parallel for shared(v,vmedio,a)
       for(i=0;i<N;i++){
-	vmedio[i] = v[i] +0.5*delta_t*a[i];
+	vmedio[i] = v[i] + 0.5*delta_t*a[i];
       }
 
       vmedio[0] = vmedio[N-1] = 0;
 
 #pragma omp parallel for shared(x,vmedio)
       for(i=0;i<N;i++){
-	x[i] = x[i] + delta_t*vmedio[i];
+	x[i] += delta_t*vmedio[i];
       }
 
       x[0] = x[N-1] = 0;
@@ -82,7 +82,9 @@ void segunda_derivada(double *x_tt, double *x){
 
 void imprimir_energia(double *x, double *v, double t){
   int i,j;
-  double A[3], Apunto[3], k[3], w_2[3], E[3];
+  double A[3], Apunto[3], k[3], w_2[3], E[3], suma;
+
+  double tiempo = omp_get_wtime();
 
   for(j=0;j<3;j++){
     A[j] = 0;
@@ -90,11 +92,19 @@ void imprimir_energia(double *x, double *v, double t){
     k[j] = j + 1;
     w_2[j] = 4*pow(sin(k[j]*Pi/(2*N + 2)),2);
 
-#pragma omp parallel for shared(A,Apunto,x,v,k)
+    suma = 0;
+#pragma omp parallel for reduction( + : suma)
     for(i=0;i<N;i++){
-      A[j] += x[i]*sin(i*k[j]*Pi/(N+1));
-      Apunto[j] += v[i]*sin(i*k[j]*Pi/(N+1));
+      suma = suma + x[i]*sin(i*k[j]*Pi/(N+1));
     }
+    A[j] = suma;
+
+    suma = 0;
+#pragma omp parallel for reduction ( + : suma)
+    for(i=0;i<N;i++){
+      suma = suma + v[i]*sin(i*k[j]*Pi/(N+1));
+    }
+    Apunto[j] = suma;
 
     A[j] = A[j]*pow((2.0/(N+1)),0.5);
     Apunto[j] = Apunto[j]*pow((2.0/(N+1)),0.5);
