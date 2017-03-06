@@ -62,5 +62,20 @@ void segunda_derivada(double *x_tt, double *x){
 }
 
 void imprimir_energia(double *x, double *v){
-  
+  int i,j;
+  double Ak[3], Apuntok[3], k[3];
+  k[0] = 1;
+  k[1] = 2;
+  k[2] = 3;
+  for(j=0;j<3;j++){
+    Ak[j] = 0;
+    Apuntok[j] = 0;
+    for(i=0;i<N;i++){
+      Ak[j] = Ak[j] + x[i]*sin(i*k[j]*Pi/(N+1));
+      Apuntok[j] = Apuntok[j] + v[i]*sin(i*k[j]*Pi/(N+1));
+    }
+    Ak[j] = Ak[j]*pow((2/(N+1)),0.5);
+    Apuntok[j] = Apuntok[j]*pow((2/(N+1)),0.5);
+  }
+
 }
