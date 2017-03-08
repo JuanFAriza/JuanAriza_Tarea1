@@ -11,7 +11,6 @@ E3 = datos[:,3]
 plt.plot(t,E1)
 plt.plot(t,E2)
 plt.plot(t,E3)
-plt.show()
 
-archivo = 'Energias.pdf'
+archivo = 'Energia.pdf'
 plt.savefig(archivo,format='pdf',transparent=True)
