@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include "omp.h"
 
@@ -11,9 +12,11 @@
 #define instantaneas 1000 // Numero de instantaneas que se tomaran
 
 void segunda_derivada(double *x_tt, double *x); // Devuelve la segunda derivada
-void imprimir_energia(double *x, double *v, double t); // Imprime la energia
+void imprimir_energia(double *x, double *v, double t, int n); // Imprime la energia
 
 int main(int argc, char **argv){
+  double inicio = omp_get_wtime();
+  
   int n = atoi(argv[1]); // Numero de threads a usar
   omp_set_num_threads(n);
 
@@ -36,7 +39,7 @@ int main(int argc, char **argv){
   }
   x[0] = x[N-1] = 0; // Cond. de front.
 
-  imprimir_energia(x,v,0); // Imprime la primera instantanea
+  imprimir_energia(x,v,0,n); // Imprime la primera instantanea
 
   for(im=1;im<1000;im++){
     for(iter=0;iter<Nt;iter++){
@@ -64,8 +67,17 @@ int main(int argc, char **argv){
 
       v[0] = v[N-1] = 0;
     }
-    imprimir_energia(x,v,T*im/1000);
+    imprimir_energia(x,v,T*im/1000,n);
   }
+
+  
+  FILE *out;
+  char *nomArchivo = "datosTiempo.dat";
+  out = fopen(nomArchivo,"a");
+
+  double tiempo = omp_get_wtime() - inicio;
+  fprintf(out,"%d %f\n",n,tiempo);
+  fclose(out);
   return 0;
 }
 
@@ -75,16 +87,20 @@ void segunda_derivada(double *x_tt, double *x){
 
 #pragma parallel for shared(x_tt,x)
   for(i=1;i<N-1;i++){
-    x_tt[i] = (x[i+1] - 2*x[i] + x[i-1]) + beta*(pow((x[i+1] - x[i]),3) - pow((x[i] - x[i-1]),3));
+    x_tt[i] = (x[i+1] - 2*x[i] + x[i-1]) + beta*(pow((x[i+1] - x[i]),2) - pow((x[i] - x[i-1]),2));
   }
 
 }
 
-void imprimir_energia(double *x, double *v, double t){
+void imprimir_energia(double *x, double *v, double t, int n){
+  FILE *out;
+
+  char *nomArchivo = "datos.dat";
+
+  out = fopen(nomArchivo,"a");
+
   int i,j;
   double A[3], Apunto[3], k[3], w_2[3], E[3], suma;
-
-  double tiempo = omp_get_wtime();
 
   for(j=0;j<3;j++){
     A[j] = 0;
@@ -110,5 +126,6 @@ void imprimir_energia(double *x, double *v, double t){
     Apunto[j] = Apunto[j]*pow((2.0/(N+1)),0.5);
     E[j] = (pow(Apunto[j],2) + w_2[j]*pow(A[j],2))/2;
   }
-  printf("%f %f %f %f\n",t,E[0],E[1],E[2]);
+  fprintf(out,"%f %f %f %f\n",t,E[0],E[1],E[2]);
+  fclose(out);
 }
