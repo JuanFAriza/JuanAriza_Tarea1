@@ -16,6 +16,11 @@ void imprimir_energia(double *x, double *v, double t, int n); // Imprime la ener
 
 int main(int argc, char **argv){
   double inicio = omp_get_wtime();
+
+  FILE *out;
+  char *nomArchivo = "datos.dat";
+  out = fopen(nomArchivo,"w");
+  fclose(out);
   
   int n = atoi(argv[1]); // Numero de threads a usar
   omp_set_num_threads(n);
@@ -70,9 +75,8 @@ int main(int argc, char **argv){
     imprimir_energia(x,v,T*im/1000,n);
   }
 
-  
-  FILE *out;
-  char *nomArchivo = "datosTiempo.dat";
+
+  nomArchivo = "datosTiempo.dat";
   out = fopen(nomArchivo,"a");
 
   double tiempo = omp_get_wtime() - inicio;
